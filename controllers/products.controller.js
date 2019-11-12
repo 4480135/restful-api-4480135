@@ -1,49 +1,70 @@
 const ProductRef = require("../models/product.model");
 
-exports.createProduct = function(req, res) {
+exports.createProduct = async function(req, res) {
     req.fields.price = parseFloat(req.fields.price);
     req.fields.weight = parseFloat(req.fields.weight);
 
-    ProductRef.add({
-        ...req.fields
-    }).then(ref => {
-        ref.get().then(doc => {
-            res.status(201).json(doc.data());
+    try {
+        await ProductRef.add({
+            ...req.fields
         });
-    }).catch(err => res.json(err));
+        const doc = await ref.get();
+        res.status(201).json(doc.data());
+    }
+    catch(err) {
+        res.status(500).end();
+    }
 };
 
-exports.getAllProducts = function(req, res) {
-    ProductRef.get().then(docs => {
+exports.getAllProducts = async function(req, res) {
+    try {
+        const refs = await ProductRef.get();
         const outJson = [];
-        docs.forEach(doc => outJson.push(doc.data()));
-        res.json(outJson);
-    });
+        refs.forEach(doc => outJson.push(doc.data()));
+        res.status(200).json(outJson);
+    }
+    catch(err) {
+        res.status(500).end();
+    }
 };
 
-exports.getSingleProduct = function(req, res) {
-    ProductRef.where("sku", "==", req.params.sku).get().then(ref => res.json(ref.forEach(doc => res.json(doc.data()))));
+exports.getSingleProduct = async function(req, res) {
+    try {
+        const refs = await ProductRef.where("sku", "==", req.params.sku).get();
+        res.json(refs[0].data());
+    }
+    catch(err) {
+        ref.status(500).end();
+    }
 };
 
-exports.deleteProduct = function(req, res) {
-    ProductRef.where("sku", "==", req.params.sku).get().then(docs =>
-        docs.forEach(doc => {doc.ref.delete(); }))
-        .catch(err => res.status(500).json({ message: err }));
-
-    res.status(204).end();
+exports.deleteProduct = async function(req, res) {
+    try {
+        const refs = await ProductRef.where("sku", "==", req.params.sku).get();
+        refs.forEach(doc => {doc.ref.delete(); });
+    
+        res.status(204).end();
+    }
+    catch(err) {
+        res.status(500).end();
+    }
 };
 
-exports.updateProduct = function(req, res) {
+exports.updateProduct = async function(req, res) {
     req.fields.price = parseFloat(req.fields.price);
     req.fields.weight = parseFloat(req.fields.weight);
 
-    ProductRef.where("sku", "==", req.params.sku).get().then(docs => {
-        docs.forEach(doc => {
+    try {
+        const refs = await ProductRef.where("sku", "==", req.params.sku).get();
+        refs.forEach(doc => {
             doc.ref.update({
                 ...req.fields
             });
         });
-    }).catch(err => res.status(500).json({ message: err }));
 
-    res.status(202).end();
+        res.status(202).end();
+    }
+    catch(err) {
+        res.status(500).end();
+    }
 };
